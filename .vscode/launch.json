@@ -1,0 +1,13 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "C/C++ Runner: Debug Session",
+      "type": "lldb",
+      "request": "launch",
+      "args": [],
+      "cwd": "/Users/antonafonin/Desktop/computer science/mini_projects/snake",
+      "program": "/Users/antonafonin/Desktop/computer science/mini_projects/snake/build/Debug/outDebug"
+    }
+  ]
+}
