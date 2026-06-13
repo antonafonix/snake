@@ -22,7 +22,7 @@ bool check_collision(WINDOW* win, int next_y, int next_x, int* out_y,
     int max_y, max_x;
     getmaxyx(win, max_y, max_x);
 
-    *out_y = next_y;
+    *out_y  = next_y;
     *out_x = next_x;
     bool collided = false;
 
