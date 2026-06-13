@@ -1,1 +1,1 @@
-# snake-
+# The console game snake
