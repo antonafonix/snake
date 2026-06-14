@@ -1,6 +1,8 @@
 #include <ncurses.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 typedef struct {
@@ -46,6 +48,20 @@ bool check_collision(WINDOW* win, int next_y, int next_x, int* out_y,
     return collided;
 }
 
+void random_position(WINDOW* win, int* y, int* x) {
+    int max_y, max_x;
+    getmaxyx(win, max_y, max_x);
+
+    int min_y = 1;
+    int max_safe_y = max_y - 1;
+
+    int min_x = 1;
+    int max_safe_x = max_x - 2;
+
+    *y = rand() % (max_safe_y - min_y + 1) + min_y;
+    *x = rand() % (max_safe_x - min_x + 1) + min_x;
+}
+
 int main() {
     initscr();
     raw();
@@ -53,6 +69,9 @@ int main() {
     noecho();
     curs_set(0);
     nodelay(stdscr, TRUE);
+
+    srand(time(NULL));
+
     int max_y, max_x;
     getmaxyx(stdscr, max_y, max_x);
 
@@ -75,8 +94,7 @@ int main() {
     box(window, 0, 0);
 
     struct player snake;
-    snake.position.x = 5;
-    snake.position.y = 10;
+    random_position(window, &snake.position.y, &snake.position.x);
     snake.symbol = 'O';
 
     mvwaddch(window, snake.position.y, snake.position.x, snake.symbol);
@@ -115,7 +133,8 @@ int main() {
         int next_y = snake.position.y + vel_y;
         int next_x = snake.position.x + vel_x;
 
-        if (check_collision(window, next_y, next_x, &snake.position.y, &snake.position.x)) {
+        if (check_collision(window, next_y, next_x, &snake.position.y,
+                            &snake.position.x)) {
             mvwprintw(window, center_y, center_x, "%s", msg);
             wrefresh(window);
 
