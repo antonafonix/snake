@@ -1,6 +1,7 @@
 #include <ncurses.h>
 #include <stdbool.h>
 #include <string.h>
+#include <unistd.h>
 
 typedef struct {
     int x;
@@ -22,7 +23,7 @@ bool check_collision(WINDOW* win, int next_y, int next_x, int* out_y,
     int max_y, max_x;
     getmaxyx(win, max_y, max_x);
 
-    *out_y  = next_y;
+    *out_y = next_y;
     *out_x = next_x;
     bool collided = false;
 
@@ -51,7 +52,7 @@ int main() {
     cbreak();
     noecho();
     curs_set(0);
-
+    nodelay(stdscr, TRUE);
     int max_y, max_x;
     getmaxyx(stdscr, max_y, max_x);
 
@@ -63,8 +64,14 @@ int main() {
     int center_x = (width / 2) - (strlen(msg) / 2);
     int center_y = height / 2;
 
+    int vel_y = 0;
+    int vel_x = 1;
+
     WINDOW* window = newwin(height, width, start_y, start_x);
+
     keypad(window, TRUE);
+    nodelay(window, TRUE);
+
     box(window, 0, 0);
 
     struct player snake;
@@ -76,37 +83,51 @@ int main() {
     wrefresh(window);
 
     int ch;
-    while ((ch = wgetch(window)) != 'q') {
-        // Erase old position
-        mvwaddch(window, snake.position.y, snake.position.x, ' ');
+    bool game_over = false;
 
-        int next_y = snake.position.y;
-        int next_x = snake.position.x;
+    while (!game_over) {
+        ch = wgetch(window);
         switch (ch) {
+            case 'q':
+                game_over = true;
+                break;
             case KEY_UP:
-                next_y--;
+                vel_y = -1;
+                vel_x = 0;
                 break;
             case KEY_DOWN:
-                next_y++;
+                vel_y = 1;
+                vel_x = 0;
                 break;
             case KEY_LEFT:
-                next_x--;
+                vel_y = 0;
+                vel_x = -1;
                 break;
             case KEY_RIGHT:
-                next_x++;
+                vel_y = 0;
+                vel_x = 1;
                 break;
         }
+        if (game_over) break;
 
-        if (check_collision(window, next_y, next_x, &snake.position.y,
-                            &snake.position.x)) {
+        mvwaddch(window, snake.position.y, snake.position.x, ' ');
+
+        int next_y = snake.position.y + vel_y;
+        int next_x = snake.position.x + vel_x;
+
+        if (check_collision(window, next_y, next_x, &snake.position.y, &snake.position.x)) {
             mvwprintw(window, center_y, center_x, "%s", msg);
             wrefresh(window);
+
+            nodelay(window, FALSE);
             wgetch(window);
-            break;
+            game_over = true;
+        } else {
+            mvwaddch(window, snake.position.y, snake.position.x, snake.symbol);
+            wrefresh(window);
         }
 
-        mvwaddch(window, snake.position.y, snake.position.x, snake.symbol);
-        wrefresh(window);
+        usleep(100000);
     }
 
     delwin(window);
