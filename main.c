@@ -112,6 +112,14 @@ int main() {
 
     while (!game_over) {
         ch = wgetch(window);
+
+        if (snake.position.y == apple.position.y &&
+            snake.position.x == apple.position.x) {
+            random_position(window, &apple.position.y, &apple.position.x);
+            mvwaddch(window, apple.position.y, apple.position.x, apple.symbol);
+            wrefresh(window);
+        }
+
         switch (ch) {
             case 'q':
                 game_over = true;
