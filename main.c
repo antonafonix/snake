@@ -100,6 +100,13 @@ int main() {
     mvwaddch(window, snake.position.y, snake.position.x, snake.symbol);
     wrefresh(window);
 
+    struct food apple;
+    random_position(window, &apple.position.y, &apple.position.x);
+    apple.symbol = '@';
+
+    mvwaddch(window, apple.position.y, apple.position.x, apple.symbol);
+    wrefresh(window);
+
     int ch;
     bool game_over = false;
 
