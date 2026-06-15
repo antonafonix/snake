@@ -109,12 +109,18 @@ int main() {
 
     int ch;
     bool game_over = false;
+    int points = 0;
+    mvwprintw(window, 0, 2, "[ Score: %d ]", points);
+    wrefresh(window);
 
     while (!game_over) {
         ch = wgetch(window);
 
         if (snake.position.y == apple.position.y &&
             snake.position.x == apple.position.x) {
+            points += 100;
+            mvwprintw(window, 0, 2, "[ Score: %d ]", points);
+
             random_position(window, &apple.position.y, &apple.position.x);
             mvwaddch(window, apple.position.y, apple.position.x, apple.symbol);
             wrefresh(window);
