@@ -53,7 +53,7 @@ void random_position(WINDOW* win, int* y, int* x) {
     getmaxyx(win, max_y, max_x);
 
     int min_y = 1;
-    int max_safe_y = max_y - 1;
+    int max_safe_y = max_y - 2;
 
     int min_x = 1;
     int max_safe_x = max_x - 2;
@@ -79,99 +79,117 @@ int main() {
     int width = 40;
     int start_y = (max_y - height) / 2;
     int start_x = (max_x - width) / 2;
-    const char* msg = "END OF THE GAME";
-    int center_x = (width / 2) - (strlen(msg) / 2);
+
+    const char* msg1 = "GAME OVER";
+    const char* msg2 = "Press 'y' to replay";
+    const char* msg3 = "or any key to quit";
+
+    int center_x1 = (width / 2) - (strlen(msg1) / 2);
+    int center_x2 = (width / 2) - (strlen(msg2) / 2);
+    int center_x3 = (width / 2) - (strlen(msg3) / 2);
     int center_y = height / 2;
 
-    int vel_y = 0;
-    int vel_x = 1;
+    bool play_again = false;
 
-    WINDOW* window = newwin(height, width, start_y, start_x);
+    do {
+        int vel_y = 0;
+        int vel_x = 1;
+        int points = 0;
+        bool game_over = false;
 
-    keypad(window, TRUE);
-    nodelay(window, TRUE);
+        clear();
+        refresh();
 
-    box(window, 0, 0);
+        WINDOW* window = newwin(height, width, start_y, start_x);
+        keypad(window, TRUE);
+        nodelay(window, TRUE);
+        box(window, 0, 0);
 
-    struct player snake;
-    random_position(window, &snake.position.y, &snake.position.x);
-    snake.symbol = 'O';
+        struct player snake;
+        random_position(window, &snake.position.y, &snake.position.x);
+        snake.symbol = 'O';
+        mvwaddch(window, snake.position.y, snake.position.x, snake.symbol);
 
-    mvwaddch(window, snake.position.y, snake.position.x, snake.symbol);
-    wrefresh(window);
+        struct food apple;
+        random_position(window, &apple.position.y, &apple.position.x);
+        apple.symbol = '@';
+        mvwaddch(window, apple.position.y, apple.position.x, apple.symbol);
 
-    struct food apple;
-    random_position(window, &apple.position.y, &apple.position.x);
-    apple.symbol = '@';
+        mvwprintw(window, 0, 2, "[ Score: %d ]", points);
+        wrefresh(window);
 
-    mvwaddch(window, apple.position.y, apple.position.x, apple.symbol);
-    wrefresh(window);
+        while (!game_over) {
+            int ch = wgetch(window);
 
-    int ch;
-    bool game_over = false;
-    int points = 0;
-    mvwprintw(window, 0, 2, "[ Score: %d ]", points);
-    wrefresh(window);
+            if (snake.position.y == apple.position.y &&
+                snake.position.x == apple.position.x) {
+                points += 100;
+                mvwprintw(window, 0, 2, "[ Score: %d ]", points);
 
-    while (!game_over) {
-        ch = wgetch(window);
+                random_position(window, &apple.position.y, &apple.position.x);
+                mvwaddch(window, apple.position.y, apple.position.x,
+                         apple.symbol);
+                wrefresh(window);
+            }
 
-        if (snake.position.y == apple.position.y &&
-            snake.position.x == apple.position.x) {
-            points += 100;
-            mvwprintw(window, 0, 2, "[ Score: %d ]", points);
+            switch (ch) {
+                case 'q':
+                    game_over = true;
+                    play_again = false;
+                    break;
+                case KEY_UP:
+                    vel_y = -1;
+                    vel_x = 0;
+                    break;
+                case KEY_DOWN:
+                    vel_y = 1;
+                    vel_x = 0;
+                    break;
+                case KEY_LEFT:
+                    vel_y = 0;
+                    vel_x = -1;
+                    break;
+                case KEY_RIGHT:
+                    vel_y = 0;
+                    vel_x = 1;
+                    break;
+            }
+            if (game_over) break;
 
-            random_position(window, &apple.position.y, &apple.position.x);
-            mvwaddch(window, apple.position.y, apple.position.x, apple.symbol);
-            wrefresh(window);
-        }
+            mvwaddch(window, snake.position.y, snake.position.x, ' ');
 
-        switch (ch) {
-            case 'q':
+            int next_y = snake.position.y + vel_y;
+            int next_x = snake.position.x + vel_x;
+
+            if (check_collision(window, next_y, next_x, &snake.position.y,
+                                &snake.position.x)) {
+                mvwprintw(window, center_y - 1, center_x1, "%s", msg1);
+                mvwprintw(window, center_y, center_x2, "%s", msg2);
+                mvwprintw(window, center_y + 1, center_x3, "%s", msg3);
+                wrefresh(window);
+
+                nodelay(window, FALSE);
+                int choice = wgetch(window);
+
+                if (choice == 'y' || choice == 'Y') {
+                    play_again = true;
+                } else {
+                    play_again = false;
+                }
                 game_over = true;
-                break;
-            case KEY_UP:
-                vel_y = -1;
-                vel_x = 0;
-                break;
-            case KEY_DOWN:
-                vel_y = 1;
-                vel_x = 0;
-                break;
-            case KEY_LEFT:
-                vel_y = 0;
-                vel_x = -1;
-                break;
-            case KEY_RIGHT:
-                vel_y = 0;
-                vel_x = 1;
-                break;
-        }
-        if (game_over) break;
+            } else {
+                mvwaddch(window, snake.position.y, snake.position.x,
+                         snake.symbol);
+                wrefresh(window);
+            }
 
-        mvwaddch(window, snake.position.y, snake.position.x, ' ');
-
-        int next_y = snake.position.y + vel_y;
-        int next_x = snake.position.x + vel_x;
-
-        if (check_collision(window, next_y, next_x, &snake.position.y,
-                            &snake.position.x)) {
-            mvwprintw(window, center_y, center_x, "%s", msg);
-            wrefresh(window);
-
-            nodelay(window, FALSE);
-            wgetch(window);
-            game_over = true;
-        } else {
-            mvwaddch(window, snake.position.y, snake.position.x, snake.symbol);
-            wrefresh(window);
+            usleep(100000);
         }
 
-        usleep(100000);
-    }
+        delwin(window);
 
-    delwin(window);
+    } while (play_again);
+
     endwin();
-
     return 0;
 }
