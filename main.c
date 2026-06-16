@@ -10,15 +10,79 @@ typedef struct {
     int y;
 } coordinates;
 
-struct player {
+typedef struct player {
     coordinates position;
+    struct player* next;
     char symbol;
-};
+} player;
 
 struct food {
     coordinates position;
     char symbol;
 };
+
+player* add_tail(player* head, int y, int x, char symbol) {
+    player* newNode = (player*)malloc(sizeof(player));
+    if (newNode == NULL) return head;
+
+    newNode->position.y = y;
+    newNode->position.x = x;
+    newNode->symbol = symbol;
+    newNode->next = NULL;
+
+    if (head == NULL) return newNode;
+
+    player* current = head;
+    while (current->next != NULL) {
+        current = current->next;
+    }
+
+    current->next = newNode;
+    return head;
+}
+
+// Ripples coordinates down from the head to the trailing tail nodes
+void move_snake(player* head, int next_y, int next_x) {
+    if (head == NULL) return;
+
+    int prev_y = head->position.y;
+    int prev_x = head->position.x;
+
+    head->position.y = next_y;
+    head->position.x = next_x;
+
+    player* current = head->next;
+    while (current != NULL) {
+        int temp_y = current->position.y;
+        int temp_x = current->position.x;
+
+        current->position.y = prev_y;
+        current->position.x = prev_x;
+
+        prev_y = temp_y;
+        prev_x = temp_x;
+
+        current = current->next;
+    }
+}
+
+void draw_snake(WINDOW* window, player* head) {
+    player* current = head;
+    while (current != NULL) {
+        mvwaddch(window, current->position.y, current->position.x,
+                 current->symbol);
+        current = current->next;
+    }
+}
+
+void free_snake(player* head) {
+    player* temp;
+    while (head != NULL) {
+        temp = head;
+        head = head->next;
+        free(temp);
+    }
+}
 
 bool check_collision(WINDOW* win, int next_y, int next_x, int* out_y,
                      int* out_x) {
@@ -105,10 +169,11 @@ int main() {
         nodelay(window, TRUE);
         box(window, 0, 0);
 
-        struct player snake;
-        random_position(window, &snake.position.y, &snake.position.x);
-        snake.symbol = 'O';
-        mvwaddch(window, snake.position.y, snake.position.x, snake.symbol);
+        int start_snake_y, start_snake_x;
+        random_position(window, &start_snake_y, &start_snake_x);
+
+        player* snake = NULL;
+        snake = add_tail(snake, start_snake_y, start_snake_x, 'O');
 
         struct food apple;
         random_position(window, &apple.position.y, &apple.position.x);
@@ -121,10 +186,13 @@ int main() {
         while (!game_over) {
             int ch = wgetch(window);
 
-            if (snake.position.y == apple.position.y &&
-                snake.position.x == apple.position.x) {
+            if (snake->position.y == apple.position.y &&
+                snake->position.x == apple.position.x) {
                 points += 100;
                 mvwprintw(window, 0, 2, "[ Score: %d ]", points);
+
+                snake =
+                    add_tail(snake, snake->position.y, snake->position.x, '#');
 
                 random_position(window, &apple.position.y, &apple.position.x);
                 mvwaddch(window, apple.position.y, apple.position.x,
@@ -156,13 +224,18 @@ int main() {
             }
             if (game_over) break;
 
-            mvwaddch(window, snake.position.y, snake.position.x, ' ');
+            player* clear_ptr = snake;
+            while (clear_ptr != NULL) {
+                mvwaddch(window, clear_ptr->position.y, clear_ptr->position.x,
+                         ' ');
+                clear_ptr = clear_ptr->next;
+            }
 
-            int next_y = snake.position.y + vel_y;
-            int next_x = snake.position.x + vel_x;
+            int next_y = snake->position.y + vel_y;
+            int next_x = snake->position.x + vel_x;
+            int out_y, out_x;
 
-            if (check_collision(window, next_y, next_x, &snake.position.y,
-                                &snake.position.x)) {
+            if (check_collision(window, next_y, next_x, &out_y, &out_x)) {
                 mvwprintw(window, center_y - 1, center_x1, "%s", msg1);
                 mvwprintw(window, center_y, center_x2, "%s", msg2);
                 mvwprintw(window, center_y + 1, center_x3, "%s", msg3);
@@ -178,14 +251,18 @@ int main() {
                 }
                 game_over = true;
             } else {
-                mvwaddch(window, snake.position.y, snake.position.x,
-                         snake.symbol);
+                move_snake(snake, next_y, next_x);
+
+                mvwaddch(window, apple.position.y, apple.position.x,
+                         apple.symbol);
+                draw_snake(window, snake);
                 wrefresh(window);
             }
 
             usleep(100000);
         }
 
+        free_snake(snake);
         delwin(window);
 
     } while (play_again);
