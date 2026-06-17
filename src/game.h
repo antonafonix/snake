@@ -7,6 +7,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "menu.h"
+
 typedef struct {
     int x;
     int y;

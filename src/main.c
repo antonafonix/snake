@@ -4,25 +4,28 @@
 #include "menu.h"
 
 int main() {
-    initscr();
-    raw();
-    cbreak();
-    noecho();
-    curs_set(0);
-    nodelay(stdscr, TRUE);
-
     srand(time(NULL));
-
-    int start__menu_x = (80 - WIDTH) / 2;
-    int start_menu_y = (24 - HEIGHT) / 2;
     int highlight = 0;
 
-    WINDOW* menu_win = newwin(HEIGHT, WIDTH, start__menu_x, start_menu_y);
-    keypad(menu_win, TRUE);
+    while (true) {
+        initscr();
+        raw();
+        cbreak();
+        noecho();
+        curs_set(0);
 
-    draw_menu(menu_win, highlight);
+        WINDOW* menu_win = create_menu(highlight);
+        draw_menu(menu_win, highlight);
 
-    game_loop();
+        wclear(menu_win);
+        wrefresh(menu_win);
+        delwin(menu_win);
+
+        clear();
+        refresh();
+
+        game_loop();
+    }
 
     endwin();
     return 0;
